@@ -25,6 +25,8 @@ Features include
     1) has compatibility for TRALLOC_REPLACE'd tostring.h (in the same method of overloading tostring.h)
        which ensures no memory leaks after ToString conversion is performed
  - A header which combines all of the above and splices stringto.h conversions into all the other generic conversions : newstd.h
+    1) Pretty much ties everything together, the way it was meant to be used, although every
+       library (except printing.h which depends on tostring.h) can be used independent of each other.
    
    Was done for fun and to experiment with _Generic and manual runtime memory management.
    
