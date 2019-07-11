@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 //rand_start and rand_end set errno instead of exiting since destructors may be called from an exit,
-//and exiting twice seems bad and when tested it at least prevented other destructors from running afterwords.
+//exiting twice seems bad and when tested it at least prevented other destructors from running afterwords.
 #include <errno.h>
 #define RAND_ERRNO (1337)
 
