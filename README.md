@@ -7,6 +7,8 @@ Features include
  - Threading support for windows, unix, and others via <threads.h> if available (rough & not well tested) : threading.h
  - millisecond sleep for windows and unix : sleep_for.h
  - very rough and simple optional type : option.h
+    1) Best way to use it is to typedef it since `Option(int) != Option(int)` due to quirks of anonymous structs, 
+    but with `typedef Option(int) option_int`, `option_int == option_int`.
  - size based types , (i8,i32,f64,flong,etc.) in addition to standard c types with
    macro properties in the form of "i8_MAX", "f32_MAX", "flong_NMAX", etc. : mystd.h
  - a length-based string type with relevant functions (not well tested) : stringing.h
