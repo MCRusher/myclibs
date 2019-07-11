@@ -25,3 +25,5 @@ Features include
  - A header which combines all of the above and splices stringto.h conversions into all the other generic conversions : newstd.h
    
    Was done for fun and to experiment with _Generic and manual runtime memory management.
+   
+   Also I have no clue what I'm doing.
