@@ -9,8 +9,8 @@ Features include
  - very rough and simple optional type : option.h
     1) Best way to use it is to typedef it since `Option(int) != Option(int)` due to quirks of anonymous structs, 
     but with `typedef Option(int) option_int`, `option_int == option_int`.
- - size based types , (i8,i32,f64,flong,etc.) in addition to standard c types with
-   macro properties in the form of "i8_MAX", "f32_MAX", "flong_NMAX", etc. : mystd.h
+ - size based types and special types (`i8`,`i32`,`f64`,`flong`,etc.) in addition to standard c types with
+   macro properties in the form of `i8_MAX`, `f32_MAX`, `flong_NMAX`, etc. : mystd.h
  - a length-based string type with relevant functions (not well tested) : stringing.h
  - Allocation system with runtime tracking that allows having managed scopes, and freeing of (and warning of on debug builds)
    memory leaks at program end.
@@ -20,16 +20,16 @@ Features include
        (with credit) that I only partially understand to compare floats with other floats.
     2) tostring.h may allocate new data and should be handled accordingly,
        although string_ToString does not.
-    3) tostring.h can be used with tralloc via "#define TRALLOC_REPLACE" before include for
+    3) tostring.h can be used with `tralloc` via `#define TRALLOC_REPLACE` before include for
        additional safety and usage in managed scopes.
- - Generic printing via print, print_in, print_custom, print_in_custom, and println variants
-   through generic ToString conversions.
-    1) has compatibility for TRALLOC_REPLACE'd tostring.h (in the same method of overloading tostring.h)
+ - Generic printing via `print`, `print_in`, `print_custom`, `print_in_custom`, and `println` variants
+   through generic `ToString` conversions.
+    1) has compatibility for `TRALLOC_REPLACE`'d tostring.h (in the same method of overloading tostring.h)
        which ensures no memory leaks after ToString conversion is performed
  - A header which combines all of the above and splices stringto.h conversions into all the other generic conversions : newstd.h
     1) Pretty much ties everything together, the way it was meant to be used, although every
        header (except printing.h which depends on tostring.h) can be used independent of each other.
    
-Was done for fun and to experiment with _Generic and manual runtime memory management.
+Was done for fun and to experiment with `_Generic` and manual runtime memory management.
    
 Also I have no clue what I'm doing.
