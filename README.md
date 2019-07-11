@@ -6,6 +6,7 @@ Features include
  - "Seedless" RNG for both windows(vista+ with -lbcrypt) and unix(uhh I tested it on onlinegdb and repl.it) : random.h
  - Threading support for windows, unix, and others via <threads.h> if available (rough & not well tested) : threading.h
  - millisecond sleep for windows and unix : sleep_for.h
+ - Clearing console support for windows and unix : clear_screen.h
  - very rough and simple optional type : option.h
     1) Best way to use it is to typedef it since `Option(int) != Option(int)` due to quirks of anonymous structs, 
     but with `typedef Option(int) option_int`, `option_int == option_int`.
