@@ -16,8 +16,8 @@ Features include
    memory leaks at program end.
  - runtime checked and processed conversions to and from most types with a generic interface
    for base types : tochar.h, to8.h, to16.h, to32.h, to64.h, tof32.h, tof64.h, toflong.h, tostring.h, stringto.h
-    1) I give no guarantees on the float conversions, I did my best but it's pretty confusing & used a so algorithm
-       (with credit) that I only partially understand to compare floats with other floats.
+    1) I give no guarantees on the float conversions, I did my best but it's pretty confusing &
+       I used an algorithm from user [mch's answer on Stack Overflow](https://stackoverflow.com/questions/17333/what-is-the-most-effective-way-for-float-and-double-comparison) that I only partially understand to compare floats with other floats.
     2) tostring.h may allocate new data and should be handled accordingly,
        although string_ToString does not.
     3) tostring.h can be used with `tralloc` via `#define TRALLOC_REPLACE` before include for
