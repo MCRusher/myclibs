@@ -177,6 +177,7 @@ static inline void trdealloc_scope(void){
 //pretty sure this won't always work without getting the position of the address
 //in AddrList_ and then comparing with counts in CountVector_ to know which scope
 //to subtract from since managed scopes can be nested
+__attribute__ ((deprecated))
 static inline void* trkeep(void* addr){
 	//prevents trdealloc_scope from overfreeing
 	//if addr is in addrlist & count is being used
