@@ -30,6 +30,6 @@ Features include
     1) Pretty much ties everything together, the way it was meant to be used, although every
        header (except printing.h which depends on tostring.h) can be used independent of each other.
    
-   Was done for fun and to experiment with _Generic and manual runtime memory management.
+Was done for fun and to experiment with _Generic and manual runtime memory management.
    
-   Also I have no clue what I'm doing.
+Also I have no clue what I'm doing.
