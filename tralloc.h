@@ -1,0 +1,213 @@
+#ifndef TRALLOC_H
+#define TRALLOC_H
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <inttypes.h>
+#define COUNT_VECTOR_INIT_MAX 20
+
+struct AddrLink_ {
+	void* addr;
+	typeof(sizeof 1) count;
+	struct AddrLink_ *next;
+};
+
+struct{
+    struct AddrLink_ *first;
+    typeof(sizeof 1) count;
+} AddrList_ = {.first = ((void*)0),.count = 0};
+
+static inline void AddrList__push(void* addr, typeof(sizeof 1) count){
+	struct AddrLink_* prev = AddrList_.first;
+	AddrList_.first = malloc(sizeof(struct AddrLink_));
+	if(!AddrList_.first){
+        fputs("Could not push address.\n",stderr);
+        exit(-1);
+	}
+	AddrList_.first->addr = addr;
+	AddrList_.first->count = count;
+	AddrList_.first->next = prev;
+	++AddrList_.count;
+}
+
+static inline _Bool AddrList__pop(void){
+    if(AddrList_.first!=((void*)0)){
+        struct AddrLink_* old = AddrList_.first;
+        AddrList_.first = AddrList_.first->next;
+        free(old);
+        --AddrList_.count;
+        return 1;
+    }
+    return 0;
+}
+
+static inline _Bool AddrList__remove(void* addr){
+	if(AddrList_.first!=((void*)0)){
+		struct AddrLink_* prev = ((void*)0);
+		struct AddrLink_* curr = AddrList_.first;
+		for(typeof(sizeof 1) i = 0; i < AddrList_.count; i++){
+            if(curr->addr==addr){
+				if(prev!=((void*)0))
+					prev->next = curr->next;
+				else AddrList_.first = curr->next;
+				free(curr);
+				--AddrList_.count;
+				return 1;
+            }
+            prev = curr;
+            curr = curr->next;
+		}
+	}
+	return 0;
+}
+
+//don't think it's necessary
+static inline void* tralloc(typeof(sizeof 1) count){
+	void* addr;
+	//if(count!=0){
+		addr = calloc(1,count);
+		if(!addr){
+			fputs("Could not allocate.\n",stderr);
+			exit(-1);
+		}
+		AddrList__push(addr,count);
+	//} else addr = ((void*)0);
+    return addr;
+}
+
+//behavior compatible with free
+//requires a ** instead, null inits
+static inline void trdealloc(void** addr){
+	if(!AddrList__remove(*addr)){
+		fputs("Could not dealllocate.\n",stderr);
+		exit(-1);
+	}
+	free(*addr);
+	*addr = ((void*)0);
+}
+#define trdealloc(addr) trdealloc((void**)(addr))
+
+//behavior compatible with realloc, makes safety checks redundant
+//requires a ** instead, addr is automatically set to new address,
+//return value is redundant but to ensure C compatibility.
+static inline void trrealloc(void** addr, typeof(sizeof 1) count){
+    void* tmp = realloc(*addr,count);
+    if(!tmp && count!=0){
+        fputs("Could not reallocate.\n",stderr);
+        exit(-1);
+    }
+    if(tmp!=*addr){
+        AddrList__remove(*addr);
+        AddrList__push(tmp,count);
+    }
+    *addr = tmp;
+}
+#define trrealloc(addr,count) trrealloc((void**)(addr),(count))
+
+static inline void trdealloc_all(void){
+    while(AddrList_.count!=0)
+		AddrList__pop();
+}
+
+//Automatically runs at the end of the program (if gcc destructors are supported)
+//and frees all remaining memory.
+//when not NDEBUG, gives visible warnings of automatically handled memory leaks.
+__attribute__ ((destructor)) static inline void trcheckalloc(void){
+    if(AddrList_.count!=0){
+        #ifndef NDEBUG
+        fprintf(stderr,"\nAllocated blocks remaining: %"PRIuMAX"\nAddresses:\n",(uintmax_t)AddrList_.count);
+        #endif //NDEBUG
+        struct AddrLink_* iter = AddrList_.first;
+        while(iter!=((void*)0)){
+			#ifndef NDEBUG
+            fprintf(stderr,"\t%p of size %"PRIuMAX"\n",iter->addr,(uintmax_t)iter->count);
+			#endif //NDEBUG
+            free(iter->addr);
+			iter = iter->next;
+        }
+    }
+}
+
+struct{
+	typeof(sizeof 1)* data;
+	typeof(sizeof 1) count;
+	typeof(sizeof 1) max;
+} CountVector_ = {.data = ((void*)0), .max = 0, .count = 0};
+
+static inline void CountVector__push(typeof(sizeof 1) count){
+    if(CountVector_.max == CountVector_.count){
+    	if(CountVector_.max==0) CountVector_.max = COUNT_VECTOR_INIT_MAX;
+		else CountVector_.max *= 2;
+		CountVector_.data = realloc(CountVector_.data,sizeof(typeof(sizeof 1))*CountVector_.max);
+		if(!CountVector_.data){
+			fputs("Could not set scope.\n",stderr);
+			exit(-1);
+		}
+    }
+    CountVector_.data[CountVector_.count++] = count;
+}
+
+static inline void CountVector__pop(void){
+    if(CountVector_.count!=0){
+		--CountVector_.count;
+		//only deallocated when count hits zero
+		if(CountVector_.count==0 && CountVector_.max!=0){
+            CountVector_.max = 0;
+            free(CountVector_.data);
+            CountVector_.data = ((void*)0);
+		}
+    }
+}
+
+static inline void trset_scope(void){
+    CountVector__push(AddrList_.count);
+}
+
+static inline void trdealloc_scope(void){
+    if(CountVector_.count!=0){
+		typeof(sizeof 1) count = CountVector_.data[CountVector_.count-1];
+		//should compare correctly even if count=0
+		while(AddrList_.count!=count){
+            AddrList__pop();
+		}
+		CountVector__pop();
+    }
+}
+
+//pretty sure this won't always work without getting the position of the address
+//in AddrList_ and then comparing with counts in CountVector_ to know which scope
+//to subtract from since managed scopes can be nested
+static inline void* trkeep(void* addr){
+	//prevents trdealloc_scope from overfreeing
+	//if addr is in addrlist & count is being used
+	if(AddrList__remove(addr) && CountVector_.count!=0){
+        --CountVector_.data[CountVector_.count-1];
+	}
+	return addr;
+}
+
+static inline void* tr_malloc(typeof(sizeof 1) count){
+	return tralloc(count);
+}
+static inline void* tr_calloc(typeof(sizeof 1) size, typeof(sizeof 1) count){
+	return tralloc(size*count);
+}
+static inline void* tr_realloc(void* old, typeof(sizeof 1) count){
+    trrealloc(&old,count);
+    return old;
+}
+static inline void tr_free(void* addr){
+	trdealloc(&addr);
+}
+
+#define MANAGE {trset_scope();
+#define UNMANAGE trdealloc_scope();}
+
+#endif // TRALLOC_H
+//#ifdef TRALLOC_REPLACE
+//#define malloc(x) tr_malloc((x))
+//#define calloc(x,y) tr_calloc((x),(y))
+//#define realloc(x,size) tr_realloc((x),(size))
+//#define free(x) tr_free((x))
+//#undef TRALLOC_REPLACE
+//#endif // TRALLOC_REPLACE
