@@ -6,6 +6,8 @@
 
 #include "sleep_for.h"
 
+#include "clear_screen.h"
+
 #include "threading.h"
 
 #include "tralloc.h"
