@@ -18,10 +18,10 @@ Features include
        although string_ToString does not.
     2) tostring.h can be used with tralloc via "#define TRALLOC_REPLACE" before include for
        additional safety and usage in managed scopes.
-  - Generic printing via print, print_in, print_custom, print_in_custom, and println variants
+ - Generic printing via print, print_in, print_custom, print_in_custom, and println variants
    through generic ToString conversions.
-   1) has compatibility for TRALLOC_REPLACE'd tostring.h (in the same method of overloading tostring.h)
-      which ensures no memory leaks after ToString conversion is performed
-   - A header which combines all of the above and splices stringto.h conversions into all the other generic conversions : newstd.h
+    1) has compatibility for TRALLOC_REPLACE'd tostring.h (in the same method of overloading tostring.h)
+       which ensures no memory leaks after ToString conversion is performed
+ - A header which combines all of the above and splices stringto.h conversions into all the other generic conversions : newstd.h
    
    Was done for fun and to experiment with _Generic and manual runtime memory management.
