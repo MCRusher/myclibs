@@ -14,6 +14,15 @@ typedef struct string{
 #define string_GetEnd(str) ((str).data+(str).count)
 #endif // STRING_STRUCT
 
+#ifndef STRING_READLN_BUFSIZE
+#define STRING_READLN_BUFSIZE 100
+#endif // STRING_READLN_BUFSIZE
+
+#ifndef tool_SUPPRESS_NO_EFFECT_FILE
+#define tool_SUPPRESS_NO_EFFECT_FILE
+static inline FILE* tool_SuppressNoEffect_FILE(FILE* f){ return f; }
+#endif // tool_SUPPRESS_NO_EFFECT_FILEPTR
+
 static inline string string_Combine(string const str1, string const str2){
     char* s = malloc(str1.count+str2.count);
     if(!s){
@@ -66,5 +75,29 @@ static inline typeof(sizeof 1) string_Find(string const str, char const * const 
     //str.count should always be past the valid indexing range.
     return str.count;
 }
+
+static inline string string_ReadLn(FILE* strm){
+	typeof(sizeof 1) bufsize = STRING_READLN_BUFSIZE, count = 0;
+    char* buf = malloc(STRING_READLN_BUFSIZE);
+    if(!buf){
+		quick_fail:
+		fputs("Could not create string from stream input.\n",stderr);
+		exit(-1);
+	}
+	do{
+		buf[count++] = fgetc(strm);
+		if(count==bufsize){
+				bufsize *= 2;
+			buf = realloc(buf,bufsize);
+			if(!buf) goto quick_fail;
+		}
+	}while(buf[count-1]!='\n');
+	char* str = malloc(count-1);
+	if(!str) goto quick_fail;
+	memcpy(str,buf,count-1);
+	free(buf);
+	return (string){.data = str, .count = count-1};
+}
+#define string_ReadLn(strm...) string_ReadLn((tool_SuppressNoEffect_FILE(stdin),##strm))
 
 #include "tralloc_override_end.h"
