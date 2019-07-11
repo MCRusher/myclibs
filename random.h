@@ -3,6 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+//rand_start and rand_end set errno instead of exiting since destructors may be called from an exit,
+//and exiting twice seems bad and when tested it at least prevented other destructors from running afterwords.
+#include <errno.h>
+#define RAND_ERRNO (1337)
+
 #ifdef __WIN32
 #include <windows.h>
 #include <bcrypt.h>
@@ -15,7 +20,7 @@ __attribute__ ((constructor)) static inline void rand_start(void){
 		0
 	))){
 		fputs("Could not start RNG module.\n",stderr);
-		exit(-1);
+		errno = 1337;
 	}
 }
 static inline _Bool rand_bool(void){
@@ -88,11 +93,11 @@ static inline void rand_abstract(void* buf, size_t buf_size){
 		bch,
 		(PUCHAR)buf,
 		buf_size,
-		0\
-	))){\
-		fputs("Could not generate random abstract.\n",stderr);\
-		exit(-1);\
-	}\
+		0
+	))){
+		fputs("Could not generate random abstract.\n",stderr);
+		exit(-1);
+	}
 }
 #define rand_abstract(buf,buf_size...) rand_abstract((buf),(sizeof(typeof(*(buf))),##buf_size))
 __attribute__ ((destructor)) static inline void rand_end(void){
@@ -101,7 +106,7 @@ __attribute__ ((destructor)) static inline void rand_end(void){
 		0
 	))){
 		fputs("Could not end RNG module.\n",stderr);
-		exit(-1);
+		errno = 1337;
 	}
 }
 #elif defined(unix) || defined(__unix) || defined(__unix__)
@@ -114,7 +119,7 @@ int dev_random;
 __attribute__ ((constructor)) static inline void rand_start(void){
 	if((dev_random = open("/dev/random", O_RDONLY)) == -1){
 		fputs("Could not start RNG module.\n",stderr);
-		exit(-1);
+		errno = 1337;
 	}
 }
 static inline _Bool rand_bool(void){
@@ -167,7 +172,7 @@ static inline void rand_abstract(void* buf, size_t buf_size){
 __attribute__ ((destructor)) static inline void rand_end(void){
 	if(close(dev_random) != 0){
 		fputs("Could not end RNG module.\n",stderr);
-		exit(-1);
+		errno = 1337;
 	}
 }
 #else
