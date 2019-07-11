@@ -11,7 +11,7 @@
 #ifdef __WIN32
 #include <windows.h>
 #include <bcrypt.h>
-BCRYPT_ALG_HANDLE bch;
+BCRYPT_ALG_HANDLE bch = ((void*)0);
 __attribute__ ((constructor)) static inline void rand_start(void){
 	if(!BCRYPT_SUCCESS(BCryptOpenAlgorithmProvider(
 		&bch,
@@ -101,20 +101,21 @@ static inline void rand_abstract(void* buf, size_t buf_size){
 }
 #define rand_abstract(buf,buf_size...) rand_abstract((buf),(sizeof(typeof(*(buf))),##buf_size))
 __attribute__ ((destructor)) static inline void rand_end(void){
-	if(!BCRYPT_SUCCESS(BCryptCloseAlgorithmProvider(
+	if((bch == ((void*)0)) || !BCRYPT_SUCCESS(BCryptCloseAlgorithmProvider(
 		bch,
 		0
 	))){
 		fputs("Could not end RNG module.\n",stderr);
 		errno = 1337;
 	}
+	bch = ((void*)0);
 }
 #elif defined(unix) || defined(__unix) || defined(__unix__)
 #include <fcntl.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-int dev_random;
+int dev_random = -1;
 
 __attribute__ ((constructor)) static inline void rand_start(void){
 	if((dev_random = open("/dev/random", O_RDONLY)) == -1){
@@ -170,10 +171,11 @@ static inline void rand_abstract(void* buf, size_t buf_size){
 }
 #define rand_abstract(buf,buf_size...) rand_abstract((buf),(sizeof(typeof(*(buf))),##buf_size))
 __attribute__ ((destructor)) static inline void rand_end(void){
-	if(close(dev_random) != 0){
+	if(dev_random != -1 || close(dev_random) != 0){
 		fputs("Could not end RNG module.\n",stderr);
 		errno = 1337;
 	}
+	dev_random = -1;
 }
 #else
 	#error OS was not detected as either modern windows or unix, so there is no\
