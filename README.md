@@ -11,7 +11,7 @@ Features include
     but with `typedef Option(int) option_int`, `option_int == option_int`.
  - size based types and special types (`i8`,`i32`,`f64`,`flong`,etc.) in addition to standard c types with
    macro properties in the form of `i8_MAX`, `f32_MAX`, `flong_NMAX`, etc. : mystd.h
- - a length-based string type with relevant functions (not well tested) : stringing.h
+ - a length-based `string` type with relevant functions (not well tested) : stringing.h
  - Allocation system with runtime tracking that allows having managed scopes, and freeing of (and warning of on debug builds)
    memory leaks at program end.
  - runtime checked and processed conversions to and from most types with a generic interface
