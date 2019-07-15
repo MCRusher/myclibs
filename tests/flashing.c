@@ -2,9 +2,8 @@
 
 int main(void){
   while(1){
-    puts("Hello, World!");
-    sleep_for(1000);
     clear_screen();
+    puts("Hello, World!");
     sleep_for(1000);
   }
 }
