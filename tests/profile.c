@@ -6,7 +6,7 @@ MANAGE
   string name = string_ReadLn();
   println_in("Hello, {}",name);
   puts("How many years old are you?");
-  u8 age = string_ToU8(string_ReadLn());
+  u8 age = ToU8(string_ReadLn());
   puts("What is your sex?");
   string sex = string_ReadLn();
   puts("\nYour profile:");
