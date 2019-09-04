@@ -3,7 +3,8 @@
 Collection of C libraries (uses gcc extensions and tested in mingw-w64) that together create a new C ecosystem.
 
 Features include
- - "Seedless" RNG for both windows(vista+ with -lbcrypt) and unix(uhh I tested it on onlinegdb and repl.it) : random.h
+ - "Seedless" RNG for both windows(vista+ with -lbcrypt) and unix(uhh I tested it on onlinegdb and repl.it) : randoming.h
+    1) worse portable implementation using rand is available by defining `RANDOMING_USE_RAND` before including it.
  - Threading support for windows, unix, and others via <threads.h> if available (rough & not well tested) : threading.h
  - millisecond sleep for windows and unix : sleep_for.h
  - Clearing console support for windows and unix : clear_screen.h
