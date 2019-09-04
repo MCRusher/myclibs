@@ -1,7 +1,7 @@
 //Hello, World!
-#include "../code/myclibs/newstd.h"
+#include "newstd.h"
 
-//alias required for types to stay consistent
+//alias required for types to stay consistent,
 //an anonymous struct is not the same type as itself
 typedef option(FILE*) option_file;
 
