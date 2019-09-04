@@ -6,6 +6,10 @@
 #include <inttypes.h>
 #include "tostring.h"
 
+//NOTE: typeof((0,X)) forces X to decay from an array to a pointer
+//which is necessary for type matching against _Generic, and for assigning
+//to a local variable to prevent unintended side effects (arrays cannot be assigned).
+
 #ifndef MINISTR_STRUCT
 #define MINISTR_STRUCT
 #include <stdint.h>
@@ -92,7 +96,7 @@ static inline void tool_print_CP_in(char const * fmt, char const * str, FILE* st
 #define print(X,strm...)\
 do{\
 _Bool _done_;\
-typeof(X) x = X;\
+typeof((0,X)) x = X;\
 _Generic((x),\
 	char*: (fputs(tool_CoerceCP(x),(tool_SuppressNoEffect_FILE(stdout),##strm)),fflush((tool_SuppressNoEffect_FILE(stdout),##strm)),_done_=1),\
 	string: (print_string(ToString((x)),##strm),fflush((tool_SuppressNoEffect_FILE(stdout),##strm)),_done_=1),\
@@ -112,7 +116,7 @@ if(!_done_){\
 #define println(X,strm...)\
 do{\
 _Bool _done_;\
-typeof(X) x = X;\
+typeof((0,X)) x = X;\
 _Generic((x),\
     char*: (fputs(tool_CoerceCP(x),(tool_SuppressNoEffect_FILE(stdout),##strm)),fputc('\n',(tool_SuppressNoEffect_FILE(stdout),##strm)),_done_=1),\
     string: (print_string(ToString((x)),##strm),fputc('\n',(tool_SuppressNoEffect_FILE(stdout),##strm)),_done_=1),\
@@ -132,7 +136,7 @@ if(!_done_){\
 #define print_in(fmt,X,strm...)\
 do{\
 _Bool _done_;\
-typeof(X) x = X;\
+typeof((0,X)) x = X;\
 _Generic((x),\
 	char*: (tool_print_CP_in((fmt),tool_CoerceCP(x),(tool_SuppressNoEffect_FILE(stdout),##strm)),fflush((tool_SuppressNoEffect_FILE(stdout),##strm)),_done_=1),\
 	string: (print_string_in((fmt),ToString((x)),##strm),fflush((tool_SuppressNoEffect_FILE(stdout),##strm)),_done_=1),\
@@ -153,7 +157,7 @@ if(!_done_){\
 #define println_in(fmt,X,strm...)\
 do{\
 _Bool _done_;\
-typeof(X) x = X;\
+typeof((0,X)) x = X;\
 _Generic((x),\
 	char*: (tool_print_CP_in((fmt),tool_CoerceCP(x),(tool_SuppressNoEffect_FILE(stdout),##strm)),fputc('\n',(tool_SuppressNoEffect_FILE(stdout),##strm)),_done_=1),\
 	string: (print_string_in((fmt),ToString((x)),##strm),fputc('\n',(tool_SuppressNoEffect_FILE(stdout),##strm)),_done_=1),\
