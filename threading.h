@@ -12,33 +12,42 @@ static inline void* tool_NULL_FN(void){ return NULL;}
 #include <stdint.h>
 #include <windows.h>
 #include <process.h>
-#define thread_id uintptr_t
+typedef uintptr_t thread_t;
+///Required attribute for a function used in thread_start
 #define threaded __stdcall
-static inline thread_id thread_start(unsigned(*func)(void*),void* args){
+static inline thread_t thread_start(int(threaded *func)(),void* args){
 	//was _beginthread(func,0,args), this wasn't detachable
-	thread_id id = _beginthreadex(NULL,0,func,args,0,NULL);
+	thread_t id = _beginthreadex(NULL,0,(unsigned(threaded *)(void*))func,args,0,NULL);
 	if(id==0){
         fputs("Could not start thread.\n",stderr);
         exit(-1);
 	}
 	return id;
 }
-#define thread_start(func,args_ptr...) thread_start((unsigned(*)(void*))(func),(tool_NULL_FN(),##args_ptr))
-static inline thread_id thread_this(void){ return (thread_id)GetCurrentThread(); }
-static inline void thread_kill(thread_id id){
-	if(TerminateThread((HANDLE)id,0)==0){
-		fputs("Could not kill thread.\n",stderr);
-        exit(-1);
-	}
-}
-static inline void thread_join(thread_id id, void* ret){
-	if(WaitForSingleObject((HANDLE)id,INFINITE)==WAIT_FAILED || GetExitCodeThread((HANDLE)id,ret)==0){
+///Creates a thread, starts it with or without a single arg, then returns an associated thread_t
+#define thread_start(func,args_ptr...) thread_start((func),(tool_NULL_FN(),##args_ptr))
+///Returns a thread_t associated with the current thread
+static inline thread_t thread_this(void){ return (thread_t)GetCurrentThread(); }
+///Hints the processor to allow other threads to run before the current thread
+static inline void thread_yield(void){ SwitchToThread(); }
+////Instantly terminates the thread, Not recommended.
+//static inline void thread_kill(thread_t id){
+//	if(TerminateThread((HANDLE)id,0)==0){
+//		fputs("Could not kill thread.\n",stderr);
+//      exit(-1);
+//	}
+//}
+
+static inline void thread_join(thread_t id, int* ret){
+	if(WaitForSingleObject((HANDLE)id,INFINITE)==WAIT_FAILED || !(!ret || GetExitCodeThread((HANDLE)id,(LPDWORD)ret)!=0)){
 		fputs("Could not join thread.\n",stderr);
         exit(-1);
 	}
 }
+///Waits for the specified thread to end, then stores the return int value in ret if specified
 #define thread_join(id,ret_ptr...) thread_join((id),(tool_NULL_FN(),##ret_ptr))
-static inline void thread_detach(thread_id id){
+///Separates the execution of the specified thread from main thread
+static inline void thread_detach(thread_t id){
 	if(CloseHandle((HANDLE)id)==0){
 		fputs("Could not detach thread.\n",stderr);
         exit(-1);
@@ -47,32 +56,40 @@ static inline void thread_detach(thread_id id){
 #elif defined(unix) || defined(__unix) || defined(__unix__)
 #include <pthread.h>
 #include <unistd.h>
-#define thread_id pthread_t
+#include <sched.h>
+typedef pthread_t thread_t;
+///required attribute for a function used in thread_start
 #define threaded
-static inline thread_id thread_start(void *(*func)(void*), void* args){
-	thread_id id;
-	if(pthread_create(&id,NULL,func,args)!=0){
+static inline thread_t thread_start(int(threaded *func)(), void* args){
+	thread_t id;
+	if(pthread_create(&id,NULL,(void*(threaded *)(void*))(func),args)!=0){
 		fputs("Could not start thread.\n",stderr);
         exit(-1);
 	}
 	return id;
 }
-#define thread_start(func,args_ptr...) thread_start((void*(*)(void*))(func),(tool_NULL_FN(),##args_ptr))
-static inline thread_id thread_this(void){ return pthread_self(); }
-static inline void thread_kill(thread_id id){
-	if(pthread_cancel(id)!=0){
-		fputs("Could not kill thread.\n",stderr);
-        exit(-1);
-	}
-}
-static inline void thread_join(thread_id id, void* ret){
+///Creates a thread, starts it with or without a single arg, then returns an associated thread_t
+#define thread_start(func,args_ptr...) thread_start((func),(tool_NULL_FN(),##args_ptr))
+///Returns a thread_t associated with the current thread
+static inline thread_t thread_this(void){ return pthread_self(); }
+///Hints the processor to allow other threads to run before the current thread
+static inline void thread_yield(void){ sched_yield(); }
+//static inline void thread_kill(thread_t id){
+//	if(pthread_cancel(id)!=0){
+//		fputs("Could not kill thread.\n",stderr);
+//      exit(-1);
+//	}
+//}
+static inline void thread_join(thread_t id, int* ret){
 	if(pthread_join(id,(void**)ret)!=0){
 		fputs("Could not join thread.\n",stderr);
         exit(-1);
 	}
 }
+///Waits for the specified thread to end, then stores the return int value in ret if specified
 #define thread_join(id,ret_ptr...) thread_join((id),(tool_NULL_FN(),##ret_ptr))
-static inline void thread_detach(thread_id id){
+///Separates the execution of the specified thread from main thread
+static inline void thread_detach(thread_t id){
     if(pthread_detach(id)!=0){
 		fputs("Could not detach thread.\n",stderr);
         exit(-1);
@@ -80,32 +97,37 @@ static inline void thread_detach(thread_id id){
 }
 #elif __STDC_VERSION__ >=  201112L && !defined( __STDC_NO_THREADS__)
 #include <threads.h>
-#define thread_id thrd_t;
-#defined threaded
-static inline thread_id thread_start(thrd_start_t func, void* args){
-	thread_id id;
-	if(thrd_create(&id,func,args)!=thrd_success){
+typedef thrd_t thread_t;
+///required attribute for a function used in thread_start
+#define threaded
+static inline thread_t thread_start(int(threaded *func)(), void* args){
+	thread_t id;
+	if(thrd_create(&id,(thrd_start_t)func,args)!=thrd_success){
 		fputs("Could not start thread.\n",stderr);
         exit(-1);
 	}
 	return id;
 }
-#define thread_start(func,args_ptr...) thread_start(thrd_start_t)(func),(tool_NULL_FN(),##args_ptr))
-static inline thread_id thread_this(void){ return thrd_current();
-#warning C11 has no equivalent of win32 TerminateThread or posix pthread_cancel, so\
-		thread_kill is a forced exit. An atomic condition variable should be preferred anyways.
-static inline void thread_kill(thread_id id){
-	fputs("Killing another thread is not available using current C11 <threads.h> features.\n",stderr);
-	exit(-1);
-}
-static inline void thread_join(thread_id id, void* ret){
+///Creates a thread, starts it with or without a single arg, then returns an associated thread_t
+#define thread_start(func,args_ptr...) thread_start((func),(tool_NULL_FN(),##args_ptr))
+///Returns a thread_t associated with the current thread
+static inline thread_t thread_this(void){ return thrd_current();
+///Hints the processor to allow other threads to run before the current thread
+static inline void thread_yield(void){ thrd_yield(); }
+//static inline void thread_kill(thread_t id){
+//	fputs("Killing another thread is not available using current C11 <threads.h> features.\n",stderr);
+//	exit(-1);
+//}
+static inline void thread_join(thread_t id, int* ret){
 	if(thrd_join(id,(int*)ret)!=thrd_success){
 		fputs("Could not join thread.\n",stderr);
         exit(-1);
 	}
 }
+///Waits for the specified thread to end, then stores the return int value in ret if specified
 #define thread_join(id,ret_ptr...) thread_join((id),(tool_NULL_FN(),##ret_ptr))
-static inline void thread_detach(thread_id id){
+///Separates the execution of the specified thread from main thread
+static inline void thread_detach(thread_t id){
 	if(thrd_detach(id)!=thrd_success){
 		fputs("Could not detach thread.\n",stderr);
         exit(-1);
@@ -113,5 +135,5 @@ static inline void thread_detach(thread_id id){
 }
 #else
 	#error OS not detected as modern windows or unix, and compiler does not support C11 threads, so no implementation of\
-		   thread_start(func,args) is available
+		   threading.h is available
 #endif // _WIN32

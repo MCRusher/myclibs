@@ -23,6 +23,20 @@ typedef struct string{
 #define string_GetEnd(str) ((str).data+(str).count)
 #endif // STRING_STRUCT
 
+#ifndef MINISTR_STRUCT
+#define MINISTR_STRUCT
+#include <stdint.h>
+///A string type with a maximum size of 255 characters
+///Uses no allocation
+typedef struct ministr {
+	char data[255];
+	uint8_t count;
+} ministr;
+#define ministr_GetEnd(mstr) ((mstr).data+(mstr).count)
+#endif // MINISTR_STRUCT
+
+
+
 #ifndef TOOL_GET_DIGITS
 #define TOOL_GET_DIGITS
 //math expression from John Bollinger
@@ -30,27 +44,28 @@ typedef struct string{
 #define tool_GetDigits(type...) (241*sizeof(type)/100+1)
 #endif // TOOL_GET_DIGITS
 
-#if defined(__SIZEOF_INT128__) && !defined(TOOL_ABS64)
-#define TOOL_ABS64
-//goal is to portably get the
-//absolute value of num (INT64_MAX),
-//which requires at least 19 digits
-//of precision/storage
-static inline __int128 tool_abs64(int64_t num){
-    if(num<0){
-		__int128 tmp = num;
-		tmp *= -1;
-		return tmp;
-    }else return num;
-}
-#endif // TOOL_ABS64
+//obsolete
+//#if defined(__SIZEOF_INT128__) && !defined(TOOL_ABS64)
+//#define TOOL_ABS64
+////goal is to portably get the
+////absolute value of num (INT64_MAX),
+////which requires at least 19 digits
+////of precision/storage
+//static inline __int128 tool_abs64(int64_t num){
+//    if(num<0){
+//		__int128 tmp = num;
+//		tmp *= -1;
+//		return tmp;
+//    }else return num;
+//}
+//#endif // TOOL_ABS64
 
 #ifndef tool_SUPPRESS_NO_EFFECT_UINT8_T
 #define tool_SUPPRESS_NO_EFFECT_UINT8_T
 static inline uint8_t tool_SuppressNoEffect_uint8_t(uint8_t i){ return i; }
 #endif // tool_SUPPRESS_NO_EFFECT
 
-#if defined(__MINGW32__) && (!defined(__USE_MINGW_ANSI_STDIO) || __USE_MINGW_ANSI_STDIO == 1)
+#if defined(__MINGW32__) && (!defined(__USE_MINGW_ANSI_STDIO) || __USE_MINGW_ANSI_STDIO != 1)
 #define snprintf __mingw_snprintf
 #endif
 
@@ -141,14 +156,18 @@ static inline string i64_ToString(int64_t d){
 		//printf("d%%10 = %d\n",d%10);
 
         str[--index] =
-        #if LDBL_DIG >= 19
-			(((int64_t)fabsl((long double)d))%10)+'0';
-		#elif defined(TOOL_ABS64)
-			(tool_abs64(d)%10)+'0';
-		#else
-			#error No system supported way of getting the absolute value of an int64_t\
-				   is supported/could be implemented, so no implementation of i64_ToString is available.
-		#endif
+		//all below code was made obsolete by changing operator order so that
+		//the int passed to llabs is never greater than INT64_MAX
+		//(LLONG_MAX guaranteed at least 64 bits)
+			llabs(d % 10)+'0';
+        /*#if LDBL_DIG >= 19
+		//	(((int64_t)fabsl((long double)d))%10)+'0';
+		//#elif defined(TOOL_ABS64)
+		//	(tool_abs64(d)%10)+'0';
+		//#else
+		//	#error No system supported way of getting the absolute value of an int64_t\
+		//		   is supported/could be implemented, so no implementation of i64_ToString is available.
+		//#endif*/
         d /=10;
     }while(d);
 	char* tmp = malloc(count);
@@ -272,12 +291,24 @@ static inline string char_ToString(char c){
 	return (string){.data = tmp, .count = 1};
 }
 
+static inline string ministr_ToString(ministr ms){
+	char* tmp = malloc(ms.count);
+	if(!tmp){
+		fputs("Could not convert char to string.\n",stderr);
+		exit(-1);
+	}
+	memcpy(tmp,ms.data,ms.count);
+	return (string){.data = tmp, .count = ms.count};
+}
+
 static inline string string_ToString(string s){ return s; }
 
-static inline string invalid_ToString(){ return (string){.data = ((void*)0)}; }
+static inline string invalid_ToString(){ return (string){.data = ((void*)0), .count = 0}; }
 
 #define ToString(x)\
 _Generic((x),\
+	long double: flong_ToString,\
+	default: _Generic((x),\
 	_Bool: bool_ToString,\
 	int8_t: i8_ToString,\
 	uint8_t: u8_ToString,\
@@ -289,12 +320,12 @@ _Generic((x),\
 	uint64_t: u64_ToString,\
 	float: f32_ToString,\
 	double: f64_ToString,\
-	long double: flong_ToString,\
 	char*: cstring_ToString,\
 	char: char_ToString,\
+	ministr: ministr_ToString,\
 	string: string_ToString,\
 	default: invalid_ToString\
-)((x))
+))((x))
 
 #ifdef snprintf
 #undef snprintf

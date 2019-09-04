@@ -6,15 +6,17 @@
 
 static inline int32_t i64_ToI32(int64_t i){
     if(i>INT32_MAX || i<INT32_MIN){
-		fputs("Could not convert iX to i32.\n",stderr);
-		exit(-1);
+		//fputs("Could not convert iX to i32.\n",stderr);
+		//exit(-1);
+		return 0;
     }
     return (int32_t)i;
 }
 static inline int32_t u64_ToI32(uint64_t i){
     if(i>INT32_MAX){
-		fputs("Could not convert uX to i32.\n",stderr);
-		exit(-1);
+		//fputs("Could not convert uX to i32.\n",stderr);
+		//exit(-1);
+		return 0;
     }
     return (int32_t)i;
 }
@@ -27,8 +29,9 @@ static inline int32_t u32_ToI32(uint32_t i){ return u64_ToI32(i); }
 static inline int32_t flong_ToI32(long double f){
 	f = roundl(f);
 	if(f>INT32_MAX || f<INT32_MIN){
-		fputs("Could not convert fX to i32.\n",stderr);
-		exit(-1);
+		//fputs("Could not convert fX to i32.\n",stderr);
+		//exit(-1);
+		return 0;
     }
     return (int32_t)f;
 }
@@ -53,15 +56,17 @@ _Generic((x),\
 //unsigned
 static inline uint32_t i64_ToU32(int64_t i){
     if(i>UINT32_MAX || i<0){
-		fputs("Could not convert iX to u32.\n",stderr);
-		exit(-1);
+		//fputs("Could not convert iX to u32.\n",stderr);
+		//exit(-1);
+		return 0;
     }
     return (uint32_t)i;
 }
 static inline uint32_t u64_ToU32(uint64_t i){
     if(i>UINT32_MAX){
-		fputs("Could not convert uX to u32.\n",stderr);
-		exit(-1);
+		//fputs("Could not convert uX to u32.\n",stderr);
+		//exit(-1);
+		return 0;
     }
     return (uint32_t)i;
 }
@@ -74,8 +79,9 @@ static inline uint32_t u32_ToU32(uint32_t i){ return i; }
 static inline uint32_t flong_ToU32(long double f){
 	f = roundl(f);
 	if(f>UINT32_MAX || f<0.0){
-		fputs("Could not convert fX to u8.\n",stderr);
-		exit(-1);
+		//fputs("Could not convert fX to u8.\n",stderr);
+		//exit(-1);
+		return 0;
     }
     return (uint32_t)f;
 }

@@ -156,10 +156,14 @@ typedef _Bool bool;
 #define bool_TRUE ((bool)1)
 #define bool_FALSE ((bool)0)
 
-typedef struct{i8 _;} tribool;
-#define tribool_TRUE (tribool){true}
-#define tribool_FALSE (tribool){false}
+#ifndef TRIBOOL_STRUCT
+#define TRIBOOL_STRUCT
+#include <stdint.h>
+typedef struct tribool {int_fast8_t _;} tribool;
+#define tribool_TRUE (tribool){1}
+#define tribool_FALSE (tribool){0}
 #define tribool_MAYBE (tribool){-1}
+#endif // TRIBOOL_STRUCT
 
 typedef uint8_t byte;
 #define byte_MAX ((u8)UINT8_MAX)

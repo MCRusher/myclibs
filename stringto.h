@@ -31,8 +31,9 @@ static inline int64_t string_ToI64(string const s){
         case '+': return +result;
         default:{
 			quick_fail:
-			fputs("Could not convert string to iX.\n",stderr);
-			exit(-1);
+			//fputs("Could not convert string to iX.\n",stderr);
+			//exit(-1);
+			return 0;
         }
 	}
 }
@@ -55,8 +56,9 @@ static inline uint64_t string_ToU64(string const s){
         case '+': return +result;
         default:{//char is a negative or not a digit
 			quick_fail:
-			fputs("Could not convert string to iX.\n",stderr);
-			exit(-1);
+			//fputs("Could not convert string to iX.\n",stderr);
+			//exit(-1);
+			return 0;
         }
 	}
 }
@@ -89,7 +91,9 @@ static inline float string_ToF64(string const s){ return string_ToFlong(s); }
 
 static inline char string_ToChar(string const s){
 	if(s.count!=1){
-		fputs("Could not convert string to char.\n",stderr);
-		exit(-1);
+		//fputs("Could not convert string to char.\n",stderr);
+		//exit(-1);
+		return 0;
 	}
+	return *s.data;
 }

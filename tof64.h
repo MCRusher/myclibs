@@ -21,15 +21,17 @@ static inline double i64_ToF64(int64_t i){//this might be correct I think (maybe
 	//past this point exist possible holes
 	//that cannot represent values exactly
     if(i>(int64_t)pow(2,DBL_MANT_DIG) || i<(int64_t)-pow(2,DBL_MANT_DIG)){
-        fputs("Could not convert i64 to f64.\n",stderr);
-        exit(-1);
+        //fputs("Could not convert i64 to f64.\n",stderr);
+        //exit(-1);
+        return 0;
     }
     return (double)i;
 }
 static inline double u64_ToF64(uint64_t i){
     if(i>(uint64_t)pow(2,DBL_MANT_DIG)){
-        fputs("Could not convert u64 to f64.\n",stderr);
-        exit(-1);
+        //fputs("Could not convert u64 to f64.\n",stderr);
+        //exit(-1);
+        return 0;
     }
     return (double)i;
 }
@@ -48,8 +50,9 @@ static inline double flong_ToF64(long double f){
 					((fabsl(f)<fabsl(min)) ? fabsl(min) : fabsl(f))
 							* LDBL_EPSILON);//smaller than min lossless int value
 	if(result1 || result2){
-        fputs("Could not convert flong to f64.\n",stderr);
-        exit(-1);
+        //fputs("Could not convert flong to f64.\n",stderr);
+        //exit(-1);
+        return 0;
     }
     return (double)f;
 }

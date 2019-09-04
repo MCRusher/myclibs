@@ -4,7 +4,24 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <inttypes.h>
+#ifndef COUNT_VECTOR_INIT_MAX
 #define COUNT_VECTOR_INIT_MAX 20
+#endif // COUNT_VECTOR_INIT_MAX
+
+#ifndef TRALLOC_NOTHREADSAFE
+#include <errno.h>
+#include "mutexing.h"
+#define ETRALLOC (4269)
+mutex_t tralloc_mutex;
+NEWSTD_CONSTRUCTOR static inline void tralloc_start(void){
+	_Bool bvar = 0;
+	mutex_create_constructor(tralloc_mutex,bvar);
+	if(!bvar){
+		fputs("Could not start threadsafe tralloc.\n",stderr);
+		errno = ETRALLOC;
+	}
+}
+#endif // TRALLOC_NOTHREADSAFE
 
 struct AddrLink_ {
 	void* addr;
@@ -61,36 +78,60 @@ static inline _Bool AddrList__remove(void* addr){
 	return 0;
 }
 
-//don't think it's necessary
-static inline void* tralloc(typeof(sizeof 1) count){
-	void* addr;
-	//if(count!=0){
-		addr = calloc(1,count);
-		if(!addr){
-			fputs("Could not allocate.\n",stderr);
-			exit(-1);
+static inline _Bool AddrList__set(void* addr, typeof(sizeof 1) count){
+	if(AddrList_.first!=((void*)0)){
+		struct AddrLink_* curr = AddrList_.first;
+		for(typeof(sizeof 1) i = 0; i < AddrList_.count; i++){
+            if(curr->addr==addr){
+				curr->count = count;
+				return 1;
+            }
 		}
-		AddrList__push(addr,count);
-	//} else addr = ((void*)0);
+	}
+	return 0;
+}
+
+//makes safety checks redundant
+static inline void* tralloc(typeof(sizeof 1) count){
+#ifndef TRALLOC_NOTHREADSAFE
+	mutex_lock(&tralloc_mutex);
+#endif // TRALLOC_NOTHREADSAFE
+	void* addr = calloc(1,count);
+	if(!addr){
+		fputs("Could not allocate.\n",stderr);
+		exit(-1);
+	}
+	AddrList__push(addr,count);
+#ifndef TRALLOC_NOTHREADSAFE
+	mutex_unlock(&tralloc_mutex);
+#endif // TRALLOC_NOTHREADSAFE
     return addr;
 }
 
-//behavior compatible with free
-//requires a ** instead, null inits
+//requires a **, null inits
+//makes safety checks redundant
 static inline void trdealloc(void** addr){
+#ifndef TRALLOC_NOTHREADSAFE
+	mutex_lock(&tralloc_mutex);
+#endif // TRALLOC_NOTHREADSAFE
 	if(!AddrList__remove(*addr)){
 		fputs("Could not dealllocate.\n",stderr);
 		exit(-1);
 	}
 	free(*addr);
 	*addr = ((void*)0);
+#ifndef TRALLOC_NOTHREADSAFE
+	mutex_unlock(&tralloc_mutex);
+#endif // TRALLOC_NOTHREADSAFE
 }
 #define trdealloc(addr) trdealloc((void**)(addr))
 
-//behavior compatible with realloc, makes safety checks redundant
-//requires a ** instead, addr is automatically set to new address,
-//return value is redundant but to ensure C compatibility.
+//makes safety checks redundant
+//requires a **, addr is automatically set to new address,
 static inline void trrealloc(void** addr, typeof(sizeof 1) count){
+#ifndef TRALLOC_NOTHREADSAFE
+	mutex_lock(&tralloc_mutex);
+#endif // TRALLOC_NOTHREADSAFE
     void* tmp = realloc(*addr,count);
     if(!tmp && count!=0){
         fputs("Could not reallocate.\n",stderr);
@@ -99,33 +140,57 @@ static inline void trrealloc(void** addr, typeof(sizeof 1) count){
     if(tmp!=*addr){
         AddrList__remove(*addr);
         AddrList__push(tmp,count);
+        *addr = tmp;
+    }else{
+        AddrList__set(*addr,count);
     }
-    *addr = tmp;
+#ifndef TRALLOC_NOTHREADSAFE
+	mutex_unlock(&tralloc_mutex);
+#endif // TRALLOC_NOTHREADSAFE
 }
 #define trrealloc(addr,count) trrealloc((void**)(addr),(count))
 
 static inline void trdealloc_all(void){
-    while(AddrList_.count!=0)
+#ifndef TRALLOC_NOTHREADSAFE
+	mutex_lock(&tralloc_mutex);
+#endif // TRALLOC_NOTHREADSAFE
+    while(AddrList_.count!=0){
+		free(AddrList_.first->addr);
 		AddrList__pop();
+	}
+#ifndef TRALLOC_NOTHREADSAFE
+	mutex_unlock(&tralloc_mutex);
+#endif // TRALLOC_NOTHREADSAFE
 }
 
 //Automatically runs at the end of the program (if gcc destructors are supported)
 //and frees all remaining memory.
 //when not NDEBUG, gives visible warnings of automatically handled memory leaks.
-__attribute__ ((destructor)) static inline void trcheckalloc(void){
+NEWSTD_DESTRUCTOR static inline void trcheckalloc(void){
+#ifndef TRALLOC_NOTHREADSAFE
+	mutex_lock(&tralloc_mutex);
+#endif // TRALLOC_NOTHREADSAFE
     if(AddrList_.count!=0){
         #ifndef NDEBUG
         fprintf(stderr,"\nAllocated blocks remaining: %"PRIuMAX"\nAddresses:\n",(uintmax_t)AddrList_.count);
         #endif //NDEBUG
-        struct AddrLink_* iter = AddrList_.first;
-        while(iter!=((void*)0)){
+        while(AddrList_.count!=0){
 			#ifndef NDEBUG
-            fprintf(stderr,"\t%p of size %"PRIuMAX"\n",iter->addr,(uintmax_t)iter->count);
+            fprintf(stderr,"\t%p of size %"PRIuMAX"\n",AddrList_.first->addr,(uintmax_t)AddrList_.first->count);
 			#endif //NDEBUG
-            free(iter->addr);
-			iter = iter->next;
+            free(AddrList_.first->addr);
+			AddrList__pop();
         }
     }
+#ifndef TRALLOC_NOTHREADSAFE
+	mutex_unlock(&tralloc_mutex);
+	_Bool bvar = 0;
+	mutex_delete_destructor(tralloc_mutex,bvar);
+	if(!bvar){
+		fputs("Could not end threadsafe tralloc.\n",stderr);
+		errno = ETRALLOC;
+	}
+#endif // TRALLOC_NOTHREADSAFE
 }
 
 struct{
@@ -160,10 +225,19 @@ static inline void CountVector__pop(void){
 }
 
 static inline void trset_scope(void){
+#ifndef TRALLOC_NOTHREADSAFE
+	mutex_lock(&tralloc_mutex);
+#endif // TRALLOC_NOTHREADSAFE
     CountVector__push(AddrList_.count);
+#ifndef TRALLOC_NOTHREADSAFE
+	mutex_unlock(&tralloc_mutex);
+#endif // TRALLOC_NOTHREADSAFE
 }
 
 static inline void trdealloc_scope(void){
+#ifndef TRALLOC_NOTHREADSAFE
+	mutex_lock(&tralloc_mutex);
+#endif // TRALLOC_NOTHREADSAFE
     if(CountVector_.count!=0){
 		typeof(sizeof 1) count = CountVector_.data[CountVector_.count-1];
 		//should compare correctly even if count=0
@@ -172,6 +246,26 @@ static inline void trdealloc_scope(void){
 		}
 		CountVector__pop();
     }
+#ifndef TRALLOC_NOTHREADSAFE
+	mutex_unlock(&tralloc_mutex);
+#endif // TRALLOC_NOTHREADSAFE
+}
+
+//Does no allocation, frees a previously allocated buffer at the end of the current scope.
+static inline void tradd_to_scope(void* addr, typeof(sizeof 1) count){
+#ifndef TRALLOC_NOTHREADSAFE
+	mutex_lock(&tralloc_mutex);
+#endif // TRALLOC_NOTHREADSAFE
+    AddrList__push(addr,count);
+    if(CountVector_.count>0)
+		++CountVector_.data[CountVector_.count-1];
+	else{
+		fputs("Attempt to add to scope when no scopes exist.\n",stderr);
+		exit(-1);
+	}
+#ifndef TRALLOC_NOTHREADSAFE
+	mutex_unlock(&tralloc_mutex);
+#endif // TRALLOC_NOTHREADSAFE
 }
 
 //pretty sure this won't always work without getting the position of the address
@@ -187,6 +281,7 @@ static inline void* trkeep(void* addr){
 	return addr;
 }
 
+//C compatible wrappers
 static inline void* tr_malloc(typeof(sizeof 1) count){
 	return tralloc(count);
 }

@@ -22,15 +22,17 @@ static inline long double i64_ToFlong(int64_t i){//this might be correct I think
 	//past this point exist possible holes
 	//that cannot represent values exactly
     if(i>(int64_t)pow(2,LDBL_MANT_DIG) || i<(int64_t)-pow(2,LDBL_MANT_DIG)){
-        fputs("Could not convert i64 to flong.\n",stderr);
-        exit(-1);
+        //fputs("Could not convert i64 to flong.\n",stderr);
+        //exit(-1);
+        return 0;
     }
     return (long double)i;
 }
 static inline long double u64_ToFlong(uint64_t i){
     if(i>(uint64_t)pow(2,LDBL_MANT_DIG)){
-        fputs("Could not convert u64 to flong.\n",stderr);
-        exit(-1);
+        //fputs("Could not convert u64 to flong.\n",stderr);
+        //exit(-1);
+        return 0;
     }
     return (long double)i;
 }

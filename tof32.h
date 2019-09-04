@@ -17,15 +17,17 @@ static inline float i64_ToF32(int64_t i){//this might be correct I think (maybe)
 	//past this point exist possible holes
 	//that cannot represent values exactly
     if(i>(int64_t)powf(2,FLT_MANT_DIG) || i<(int64_t)-powf(2,FLT_MANT_DIG)){
-        fputs("Could not convert i(>16) to f32.\n",stderr);
-        exit(-1);
+        //fputs("Could not convert i(>16) to f32.\n",stderr);
+        //exit(-1);
+        return 0;
     }
     return (float)i;
 }
 static inline float u64_ToF32(uint64_t i){
     if(i>(uint64_t)powf(2,FLT_MANT_DIG)){
-        fputs("Could not convert u(>16) to f32.\n",stderr);
-        exit(-1);
+        //fputs("Could not convert u(>16) to f32.\n",stderr);
+        //exit(-1);
+        return 0;
     }
     return (float)i;
 }
@@ -47,8 +49,9 @@ static inline float flong_ToF32(long double f){
 					((fabsl(f)<fabsl(min)) ? fabsl(min) : fabsl(f))
 							* LDBL_EPSILON);//smaller than min lossless int value
 	if(result1 || result2){
-        fputs("Could not convert f(>32) to f32.\n",stderr);
-        exit(-1);
+        //fputs("Could not convert f(>32) to f32.\n",stderr);
+        //exit(-1);
+        return 0;
     }
     return (float)f;
 }
