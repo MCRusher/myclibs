@@ -30,6 +30,7 @@ int main(void){
     //calling unbox on a none option causes
     //a runtime error and exits.
     fgets(line,200,option_Unbox(of));
+    //removes \n from line if it exists
     char* nlptr = strchr(line,'\n');
     if(nlptr) *nlptr = '\0';
     //should print "line is "//Hello, World!""
