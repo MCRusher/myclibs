@@ -13,5 +13,4 @@ MANAGE
   println_in("- Name: \"{}\"",name);
   printf("- Age: %d\n",age);
   println_in("- Sex: {}",sex);
-  string_Delete(&name);//unnecessary but works fine.
 UNMANAGE
