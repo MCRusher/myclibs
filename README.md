@@ -18,6 +18,7 @@ Features include
  - size based types and special types (`i8`,`i32`,`f64`,`flong`,etc.) in addition to standard c types with
    macro properties in the form of `i8_MAX`, `f32_MAX`, `flong_NMAX`, etc. : mystd.h
  - a length-based `string` type with relevant functions (better tested now) : stringing.h
+ - a bounded length-based string type that uses no heap allocation : ministr.h
  - Allocation system with runtime tracking that allows having managed scopes, and freeing of (and warning of on debug builds)
    memory leaks at program end : tralloc.h
    1) Thread safe by default, can be disabled by defining `TRALLOC_NOTHREADSAFE` before including
