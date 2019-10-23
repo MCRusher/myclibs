@@ -39,6 +39,7 @@ Features include
     1) Thread safe by default, can be disabled by defining `EXCEPTIONS_NOTHREADSAFE` before including
     2) uses a string for information and an integer code for matching in a Catch().
     3) unhandled exceptions will raise at either the end of the program or the first call to exit()
+
 Was done for fun and to experiment with `_Generic` and manual runtime memory management.
    
 Also I have no clue what I'm doing.
