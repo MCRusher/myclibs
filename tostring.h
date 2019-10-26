@@ -205,12 +205,14 @@ static inline string flong_ToString(long double f/*, uint8_t digs*/){
 	int64_t count;
 	if(isnan(f)){
 		str = malloc(3);
+		if(!str) goto quick_err;
 		str[0] = 'N';
 		str[1] = 'a';
 		str[2] = 'N';
 		count = 3;
 	}else if(isinf(f)){
 		str = malloc(4);
+		if(!str) goto quick_err;
 		str[0] = (signbit(f) ? '-' : '+');
 		str[1] = 'i';
 		str[2] = 'n';
@@ -241,12 +243,14 @@ static inline string f64_ToString(double f){
 	int64_t count;
 	if(isnan(f)){
 		str = malloc(3);
+		if(!str) goto quick_err;
 		str[0] = 'N';
 		str[1] = 'a';
 		str[2] = 'N';
 		count = 3;
 	}else if(isinf(f)){
 		str = malloc(4);
+		if(!str) goto quick_err;
 		str[0] = (signbit(f) ? '-' : '+');
 		str[1] = 'i';
 		str[2] = 'n';
