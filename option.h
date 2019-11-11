@@ -12,4 +12,4 @@ static inline void option_UnboxError(void){
 	fputs("Attempt to unwrap option type with none=true.\n",stderr);
 	exit(-1);
 }
-#define option_Unbox(opt) (((opt).none) ? (option_UnboxError(),&(opt)) : &(opt))->value
+#define option_Unbox(opt) (((opt).none) ? (option_UnboxError(),&(opt)) : (opt)).value
