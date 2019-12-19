@@ -1,0 +1,4 @@
+#ifndef NEWSTD_TYPEINFO
+#define NEWSTD_TYPEINFO
+
+#endif //NEWSTD_TYPEINFO
