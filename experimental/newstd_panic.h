@@ -1,3 +1,6 @@
+#ifndef NEWSTD_PANIC
+#define NEWSTD_PANIC
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -23,3 +26,4 @@ void _Noreturn panic_impl(
 
 #define static_panic_if(message, ...)\
     sizeof(struct{_Static_assert(!(__VA_ARGS__),message); int _;})
+#endif //NEWSTD_PANIC
