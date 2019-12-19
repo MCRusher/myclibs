@@ -1,5 +1,6 @@
 #ifndef NEWSTD_TYPESTR
 #include "newstd_panic.h"
+
 #define typestr_compatible(T)\
 ((_Bool)_Generic((T){0},\
     char: 1,\
@@ -33,4 +34,5 @@ _Generic((T){0},\
     long double: "long double",\
     default: static_panic_if(#T " is incompatible with typestr",!typestr_compatible(T))\
 )
+
 #endif //NEWSTD_TYPESTR
