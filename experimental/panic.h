@@ -1,14 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <inttypes.h>
 
-#define STRINGIFY_S1(x) #x
-#define STRINGIFY(x) STRINGIFY_S1(x)
-
-void _Noreturn panic(const char * const function_name, const char * const message){
-    fprintf(stderr,"%s: %s\n",function_name,message);
+void _Noreturn panic_impl(
+    const char * const message,
+    const char * const filename,
+    const char * const function,
+    uintmax_t const line){
+    fprintf(stderr,"panic[File=\"%s\",Func=\"%s\",Line=%" PRIuMAX "]: %s\n",
+        filename, function, line, message);
     exit(1);
 }
 
-#define panic(message) panic(__func__,message)
+#define panic(message) panic_impl(message,__FILE__,__func__,__LINE__)
 
-#define comptime_panic(message) _Static_assert(0,__FILE__ " at line " STRINGIFY(__LINE__) ": " message)
+#define static_panic(message) _Static_assert(0,message)
