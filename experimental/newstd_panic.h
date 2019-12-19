@@ -15,4 +15,11 @@ void _Noreturn panic_impl(
 
 #define panic(message) panic_impl(message,__FILE__,__func__,__LINE__)
 
-#define static_panic(message) _Static_assert(0,message)
+#define panic_if(message, ...) ((__VA_ARGS__) ? panic_impl(message,__FILE__,__func__,__LINE__) : (void)0) 
+
+//from: https://stackoverflow.com/a/58263525
+#define static_panic(message)\
+    sizeof(struct{_Static_assert(0,message); int _;})
+
+#define static_panic_if(message, ...)\
+    sizeof(struct{_Static_assert(!(__VA_ARGS__),message); int _;})
