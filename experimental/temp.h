@@ -96,18 +96,37 @@ void * cgESA_free(void * addr){
 void cgESA_freeall(void){
     if(cgESANodeFirst != NULL){
 #ifndef NDEBUG
+        uintmax_t counter = 0;
+        uintmax_t bytes = 0;
         fputs("cgESA Allocation Cleanup:\n",stderr);
 #endif //NDEBUG
         cgESANode * n = cgESANodeFirst;
         while(n!=NULL){
 #ifndef NDEBUG
-            fprintf(stderr," [\n  File: \"%s\",\n  Line: %" PRIuMAX ",\n  Addr: %p,\n  Size: %zu bytes\n ]",n->file,n->line, n->addr,n->count);
+            ++counter;
+            bytes += n->count;
+            fprintf(stderr,
+                " %" PRIuMAX " = [\n"
+                "  File: \"%s\",\n"
+                "  Line: %" PRIuMAX ",\n"
+                "  Addr: %p,\n"
+                "  Size: %zu bytes\n"
+                " ]\n",
+                counter,n->file,n->line, n->addr,n->count);
 #endif //NDEBUG
             free(n->addr);
             cgESANode * tmp = n;
             n = n->next;
             free(tmp);
         }
+#ifndef NDEBUG
+        fprintf(stderr,
+            "-----------------\n"
+            " Total Cleaned:\n"
+            "  -Blocks: %" PRIuMAX "\n"
+            "  -Bytes: %" PRIuMAX "\n",
+            counter,bytes);
+#endif //NDEBUG
     }
 }
 
@@ -132,6 +151,8 @@ int main(void){
     str[3] = '\0';
 
     printf("\"%s\" : %zu\n",str,cgESA_bytes(str));
+
+    cgESA_alloc(12);
 
     //cgESA_free(str);
 }
