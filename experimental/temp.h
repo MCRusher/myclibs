@@ -34,10 +34,13 @@ void * cgESA_alloc(char const * const file, uintmax_t line, size_t count)
 void * cgESA_alloc(size_t count)
 #endif //NDEBUG
 {
-    cgESANode * n = malloc(sizeof(cgESANode));
-    if(cgESANodeFirst==NULL)
+    static _Bool once_only = 0;
+    if(!once_only){
         atexit(cgESA_freeall);
-    else
+        once_only = 1;
+    }
+    cgESANode * n = malloc(sizeof(cgESANode));
+    if(cgESANodeFirst!=NULL)
         cgESANodeFirst->prev = n;
     n->prev = NULL;
     n->next = cgESANodeFirst;
@@ -98,13 +101,20 @@ void cgESA_freeall(void){
 #ifndef NDEBUG
         uintmax_t counter = 0;
         uintmax_t bytes = 0;
+        _Bool ovf = 0;
         fputs("cgESA Allocation Cleanup:\n",stderr);
 #endif //NDEBUG
         cgESANode * n = cgESANodeFirst;
         while(n!=NULL){
 #ifndef NDEBUG
             ++counter;
-            bytes += n->count;
+            if(!ovf){
+                if(bytes+n->count < bytes)
+                    ovf = 1;
+                else
+                    bytes += n->count;
+            }
+
             fprintf(stderr,
                 " %" PRIuMAX " = [\n"
                 "  File: \"%s\",\n"
@@ -123,9 +133,15 @@ void cgESA_freeall(void){
         fprintf(stderr,
             "-----------------\n"
             " Total Cleaned:\n"
-            "  -Blocks: %" PRIuMAX "\n"
-            "  -Bytes: %" PRIuMAX "\n",
-            counter,bytes);
+            "  -Blocks: %" PRIuMAX "\n",
+            counter);
+        if(!ovf)
+            fprintf(stderr,
+                "  -Bytes: %" PRIuMAX "\n",
+                bytes);
+        else
+            fputs(
+                "  -Bytes: Overflowed\n",stderr);
 #endif //NDEBUG
     }
 }
@@ -142,6 +158,8 @@ size_t cgESA_bytes(void * addr){
 #define cgESA_realloc(addr, count) cgESA_realloc(__FILE__, __LINE__, addr, count)
 #endif //NDEBUG
 
+#include <stdint.h>
+
 int main(void){
     char * str = cgESA_alloc(2);
     cgESA_realloc(str,4);
@@ -153,6 +171,10 @@ int main(void){
     printf("\"%s\" : %zu\n",str,cgESA_bytes(str));
 
     cgESA_alloc(12);
+
+    cgESA_alloc(4096);
+
+    cgESA_alloc(SIZE_MAX-1/2);
 
     //cgESA_free(str);
 }
